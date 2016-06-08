@@ -1,0 +1,70 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: dbclaim-1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+----
+kind: Pod
+apiVersion: v1
+metadata:
+  name: dbpod
+  labels:
+    name: grocery_bag_db
+spec:
+  containers:
+    - name: db
+      image: mysql
+      env:
+        -
+          name: "MYSQL_USER"
+          value: "grocery_bag"
+        -
+          name: "MYSQL_PASSWORD"
+          value: "grocery_bag_pw"
+        -
+          name: "MYSQL_DATABASE"
+          value: "grocery_bag"
+        -
+          name: "MYSQL_ROOT_PASSWORD"
+          value: "oshan1991"
+      ports:
+        - containerPort: 3306
+          name: "db-server"
+      volumeMounts:
+      - mountPath: "/mnt/var/lib/mysql/data"
+        name: myqlpod
+  volumes:
+    - name: myqlpod
+      persistentVolumeClaim:
+       claimName: dbclaim-1
+----
+kind: "Service"
+apiVersion: "v1"
+metadata: 
+  name: "dbservice"
+spec: 
+  ports: 
+    - 
+      name: "db-server"
+      protocol: "TCP"
+      port: 3306
+      targetPort: 3306
+  selector: 
+    name: "grocery_bag_db"
+---
+  kind: "Route"
+  apiVersion: "v1"
+  metadata: 
+    name: "dbroute"
+  spec: 
+    host: "docker.db"
+    to: 
+      kind: "Service"
+      name: "dbservice"
+    tls: 
+      termination: "edge"

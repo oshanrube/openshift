@@ -1,0 +1,24 @@
+#!/bin/bash -e
+#
+# S2I run script for the 'grocery_bag' image.
+# The run script executes the server that runs your application.
+#
+# For more information see the documentation:
+#	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
+#
+
+
+# sed -i.bak s/DATABASE_SERVICE_NAME/$DATABASE_SERVICE_NAME/g /var/www/html/db.php
+# sed -i.bak s/MYSQL_USER/$MYSQL_USER/g /var/www/html/db.php
+# sed -i.bak s/MYSQL_PASSWORD/$MYSQL_PASSWORD/g /var/www/html/db.php
+# sed -i.bak s/MYSQL_DATABASE/$MYSQL_DATABASE/g /var/www/html/db.php
+
+echo "
+<?php 
+putenv('DATABASE_SERVICE_NAME=$DATABASE_SERVICE_NAME');
+putenv('MYSQL_USER=$MYSQL_USER');
+putenv('MYSQL_PASSWORD=$MYSQL_PASSWORD');
+putenv('MYSQL_DATABASE=$MYSQL_DATABASE');
+" > /var/www/html/env.php
+
+exec /usr/sbin/php-fpm --nodaemonize

@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: nginxrc
+  labels:
+    name: nginxrc
+spec:
+  replicas: 1
+  selector:
+    name: nginxpod
+  template:
+    metadata:
+      labels:
+        name: nginxpod
+    spec:
+      containers:
+        - name: nginx
+          image: oshanrube/prod-gb-nginx:1
+          ports:
+            - containerPort: 8080
+              name: "nginx-server"
+          volumeMounts:
+            - mountPath: "/var/www/html"
+              name: nginxclaim
+        - name: php
+          image: oshanrube/prod-gb-phpfpm:1
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: "/var/www/html"
+              name: nginxclaim
+      volumes:
+        - name: nginxclaim
+          nfs:
+            server: 192.168.1.112
+            path: /home/data/pv001
+----
+kind: "Service"
+apiVersion: "v1"
+metadata:
+  name: "nginxservice"
+spec:
+  ports:
+    - name: "nginx-server"
+      protocol: "TCP"
+      port: 80
+      targetPort: 8080
+  selector:
+    name: nginxpod
+  type: LoadBalancer
+---
+  kind: "Route"
+  apiVersion: "v1"
+  metadata: 
+    name: "nginxroute"
+  spec: 
+    host: "docker.dev"
+    to: 
+      kind: "Service"
+      name: "nginxservice"
+    tls: 
+      termination: "edge"
